@@ -9,7 +9,7 @@
     * { box-sizing: border-box; }
     html, body { height: 100%; margin: 0; }
     body {
-      background: #5c94fc;               /* céu do Mario */
+      background: #5c94fc;
       font-family: 'Press Start 2P', monospace;
       overflow: hidden;
     }
@@ -113,10 +113,44 @@
       z-index: 2;
       animation: saltar 0.8s ease-in-out infinite alternate;
     }
+
+    /* Personagem a voar (estilo Flappy Bird) */
+    .voador {
+      position: fixed;
+      top: 14%;
+      left: -160px;
+      width: clamp(90px, 14vw, 150px);
+      z-index: 6;
+      pointer-events: none;
+      animation: cruzar 14s linear infinite;
+    }
+    .voador svg { width: 100%; height: auto; display: block; }
+    .voador .corpo {
+      animation: pulinho 0.9s ease-in-out infinite;
+    }
+    @keyframes cruzar {
+      from { left: -160px; }
+      to   { left: 100%; }
+    }
+    @keyframes pulinho {
+      0%   { transform: translateY(40px)  rotate(-20deg); }
+      25%  { transform: translateY(-30px) rotate(-20deg); }
+      100% { transform: translateY(40px)  rotate(25deg); }
+    }
+    .asa {
+      transform-box: fill-box;
+      transform-origin: 50% 100%;
+      animation: bater 0.2s ease-in-out infinite alternate;
+    }
+    @keyframes bater {
+      from { transform: rotate(-25deg); }
+      to   { transform: rotate(25deg); }
+    }
   </style>
 </head>
 <body>
 
+  <!-- Fundo Mario -->
   <div class="nuvem n1"></div>
   <div class="nuvem n2"></div>
   <div class="nuvem n3"></div>
@@ -125,6 +159,7 @@
   <div class="colina c2"></div>
   <div class="chao"></div>
 
+  <!-- Título e personagens -->
   <div class="conteudo">
     <h1>Constança e Lidia<br>programadoras</h1>
 
@@ -163,6 +198,66 @@
         <path d="M90 136 Q100 141 110 136" fill="none" stroke="#a8504c" stroke-width="3" stroke-linecap="round"/>
       </svg>
 
+    </div>
+  </div>
+
+  <!-- Personagem a voar (Flappy Bird) -->
+  <div class="voador">
+    <div class="corpo">
+      <svg viewBox="0 0 200 230" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="armacao" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#d94a4a"/>
+            <stop offset="0.5" stop-color="#4a7bd9"/>
+            <stop offset="1" stop-color="#f2b632"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Asas -->
+        <g class="asa">
+          <ellipse cx="22" cy="150" rx="30" ry="15" fill="#fff" stroke="#000" stroke-width="4" transform="rotate(-30 22 150)"/>
+        </g>
+        <g class="asa">
+          <ellipse cx="178" cy="150" rx="30" ry="15" fill="#fff" stroke="#000" stroke-width="4" transform="rotate(30 178 150)"/>
+        </g>
+
+        <!-- Camisa colorida -->
+        <path d="M28 230 Q40 170 100 164 Q160 170 172 230 Z" fill="#4a86c8"/>
+        <circle cx="62" cy="200" r="9" fill="#3cc9a5"/>
+        <circle cx="100" cy="212" r="10" fill="#a56cd6"/>
+        <circle cx="138" cy="198" r="9" fill="#f2e04a"/>
+        <circle cx="80" cy="180" r="6" fill="#a56cd6"/>
+        <circle cx="124" cy="182" r="6" fill="#3cc9a5"/>
+
+        <!-- Pescoço -->
+        <rect x="88" y="142" width="24" height="28" fill="#e8b98f"/>
+
+        <!-- Cabelo de trás (mullet) -->
+        <path d="M44 156 L44 86 Q44 22 100 22 Q156 22 156 86 L156 156 Q140 138 100 138 Q60 138 44 156 Z" fill="#2a1d17"/>
+
+        <!-- Cara -->
+        <ellipse cx="100" cy="102" rx="44" ry="52" fill="#e8b98f"/>
+
+        <!-- Barba por fazer -->
+        <path d="M58 112 Q62 154 100 158 Q138 154 142 112 Q130 134 100 136 Q70 134 58 112 Z" fill="#5a4034" opacity="0.35"/>
+
+        <!-- Franja -->
+        <path d="M54 92 Q50 34 100 32 Q150 34 146 92 Q135 62 100 66 Q65 62 54 92 Z" fill="#2a1d17"/>
+
+        <!-- Óculos coloridos -->
+        <rect x="58" y="90" width="38" height="28" rx="4" fill="#fff" fill-opacity="0.35" stroke="url(#armacao)" stroke-width="6"/>
+        <rect x="104" y="90" width="38" height="28" rx="4" fill="#fff" fill-opacity="0.35" stroke="url(#armacao)" stroke-width="6"/>
+        <line x1="96" y1="98" x2="104" y2="98" stroke="#4a7bd9" stroke-width="5"/>
+        <circle cx="77" cy="104" r="4" fill="#2b1a10"/>
+        <circle cx="123" cy="104" r="4" fill="#2b1a10"/>
+
+        <!-- Bigode e sorriso -->
+        <path d="M76 124 Q100 114 124 124 Q112 132 100 126 Q88 132 76 124 Z" fill="#2a1d17"/>
+        <path d="M88 140 Q100 148 112 140" fill="none" stroke="#a8504c" stroke-width="3" stroke-linecap="round"/>
+
+        <!-- Brinco -->
+        <circle cx="55" cy="122" r="7" fill="none" stroke="#aaa" stroke-width="3"/>
+      </svg>
     </div>
   </div>
 
