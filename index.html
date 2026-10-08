@@ -59,3 +59,26 @@
 
 </body>
 </html>
+.pessoa {
+      position: fixed;
+      bottom: 10px;
+      left: 0;
+      font-size: 3.5em;
+      z-index: 10;
+      animation: andar 14s linear infinite;
+    }
+    .pessoa span {
+      display: inline-block;
+      animation: saltitar 0.5s ease-in-out infinite alternate;
+    }
+    @keyframes andar {
+      0%   { left: 0; transform: scaleX(1); }
+      49%  { left: calc(100% - 70px); transform: scaleX(1); }
+      50%  { left: calc(100% - 70px); transform: scaleX(-1); }
+      99%  { left: 0; transform: scaleX(-1); }
+      100% { left: 0; transform: scaleX(1); }
+    }
+    @keyframes saltitar {
+      from { transform: translateY(0); }
+      to   { transform: translateY(-8px); }
+    }
