@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matrix Face v5</title>
+<style>
+  html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:monospace;color:#33ff66}
+  canvas{position:fixed;inset:0;width:100%;height:100%}
+  #ui{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:2;text-align:center;padding:20px}
+  #ui.off{display:none}
+  button{background:transparent;color:#33ff66;border:1px solid #33ff66;padding:14px 28px;font:inherit;font-size:18px;cursor:pointer}
+  button:hover{background:#33ff66;color:#000}
+  #log{position:fixed;left:10px;top:10px;font-size:13px;line-height:1.4;z-index:5;white-space:pre-wrap;max-width:60vw}
+  #log .e{color:#ff5577}
+  video{position:fixed;right:10px;top:10px;width:160px;border:1px solid #33ff66;opacity:.6;transform:scaleX(-1);z-index:3}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<video id="v" playsinline muted autoplay></video>
+<div id="ui">
+  <h1>01001101 01100101</h1>
+  <p>Vou usar a câmara para desenhar a tua cara em 0s e 1s.<br>Mexe a cabeça, levanta a mão, deita a língua de fora.</p>
+  <button id="start">Ligar câmara</button>
+</div>
+<div id="log"></div>
+
+<script>
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+const video = document.getElementById("v");
+const ui = document.getElementById("ui");
+const logEl = document.getElementById("log");
+const lines = [];
+function log(s, err){
+  lines.push((err ? "<span class='e'>" : "<span>") + String(s).replace(/</g,"&lt;") + "</span>");
+  while (lines.length > 9) lines.shift();
+  logEl.innerHTML = lines.join("\n");
+}
+addEventListener("error", e => log("ERRO: " + e.message, true));
+addEventListener("unhandledrejection", e => log("ERRO: " + (e.reason && e.reason.message || e.reason), true));
+log("VERSÃO 5 carregada. Clica em Ligar câmara.");
+
+let W, H, dpr;
+function resize(){ dpr = devicePixelRatio||1; W = innerWidth; H = innerHeight;
+  cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+addEventListener("resize", resize); resize();
+
+let rotY = 0, rotX = 0, tY = 0, tX = 0;
+addEventListener("pointermove", e => {
+  tY = (e.clientX/W - .5) * 1.6;
+  tX = (e.clientY/H - .5) * -0.8;
+});
+
+let face = null, hand = null, faceRes = null, handRes = null;
+let FACE_EDGES = [], HAND_EDGES = [];
+let running = false, lastTs = 0, frames = 0, fps = 0, fpsT = performance.now();
+const CDN = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+const MODELS = "https://storage.googleapis.com/mediapipe-models/";
+const DELEGATE = "CPU";
+
+document.getElementById("start").onclick = async () => {
+  try {
+    log("1/4 a pedir a câmara…");
+    const stream = await navigator.mediaDevices.getUserMedia({ video:{ width:640, height:480, facingMode:"user" } });
+    video.srcObject = stream; await video.play();
+    ui.classList.add("off");
+    log("câmara OK (" + video.videoWidth + "x" + video.videoHeight + ")");
+
+    log("2/4 a carregar a biblioteca de IA…");
+    const lib = await import(CDN + "/vision_bundle.mjs");
+    const { FaceLandmarker, HandLandmarker, FilesetResolver } = lib;
+    const fs = await FilesetResolver.forVisionTasks(CDN + "/wasm");
+    log("biblioteca OK");
+
+    log("3/4 a carregar modelo da cara (10-20 s)…");
+    face = await FaceLandmarker.createFromOptions(fs, {
+      baseOptions:{ modelAssetPath: MODELS + "face_landmarker/face_landmarker/float16/1/face_landmarker.task", delegate: DELEGATE },
+      runningMode:"VIDEO", numFaces:1, outputFaceBlendshapes:true });
+    const tess = FaceLandmarker.FACE_LANDMARKS_TESSELATION;
+    FACE_EDGES = Array.isArray(tess) ? tess : [];
+    log("modelo da cara OK | linhas da malha: " + FACE_EDGES.length);
+    running = true;
+
+    log("4/4 a carregar modelo das mãos…");
+    try {
+      hand = await HandLandmarker.createFromOptions(fs, {
+        baseOptions:{ modelAssetPath: MODELS + "hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task", delegate: DELEGATE },
+        runningMode:"VIDEO", numHands:2 });
+      const hc = HandLandmarker.HAND_CONNECTIONS;
+      HAND_EDGES = Array.isArray(hc) ? hc : [];
+      log("modelo das mãos OK");
+    } catch(e){ log("sem mãos: " + e.message, true); }
+  } catch(err){
+    ui.classList.remove("off");
+    let t = err.message || String(err);
+    if (err.name === "NotAllowedError") t = "câmara bloqueada. Permite a câmara nas definições do site.";
+    if (err.name === "NotFoundError") t = "não encontrei nenhuma câmara.";
+    log("FALHOU: " + t, true);
+  }
+};
+
+function project(p, S, aspect){
+  let x = (0.5 - p.x) * aspect * S;
+  let y = (p.y - 0.5) * S;
+  let z = -p.z * aspect * S * 1.5;
+  const cy = Math.cos(rotY), sy = Math.sin(rotY), cx = Math.cos(rotX), sx = Math.sin(rotX);
+  let x1 = x*cy + z*sy, z1 = -x*sy + z*cy;
+  let y1 = y*cx - z1*sx, z2 = y*sx + z1*cx;
+  const f = S*1.6, k = f/(f + z2);
+  return { x: W/2 + x1*k, y: H/2 + y1*k, d: z2/S, k };
+}
+
+function digit(i, t){ return ((i*2654435761 + Math.floor(t/400 + (i%7))) >>> 3) & 1 ? "1" : "0"; }
+
+function put(x, y, d, k, color, size, n, t){
+  const alpha = Math.max(.3, Math.min(1, .8 - d*1.6));
+  ctx.fillStyle = color + alpha.toFixed(2) + ")";
+  ctx.font = Math.max(7, size*k) + "px monospace";
+  ctx.fillText(digit(n, t), x, y);
+}
+
+function drawShape(lms, edges, samples, S, aspect, t, color, size, seed){
+  const P = lms.map(p => project(p, S, aspect));
+  let n = seed;
+  if (edges.length){
+    for (const e of edges){
+      const a = P[e.start], b = P[e.end];
+      if (!a || !b) continue;
+      for (let s=0; s<samples; s++){
+        const u = s/samples;
+        put(a.x+(b.x-a.x)*u, a.y+(b.y-a.y)*u, a.d+(b.d-a.d)*u, a.k+(b.k-a.k)*u, color, size, n++, t);
+      }
+    }
+  } else {
+    for (const a of P) put(a.x, a.y, a.d, a.k, color, size*1.6, n++, t);
+  }
+}
+
+function drawTongue(lms, amount, S, aspect, t){
+  const chin = project(lms[17], S, aspect);
+  const len = amount * S * 0.16;
+  for (let i=0;i<70;i++){
+    const u = (i%14)/14, v = Math.floor(i/14)/5 - .5;
+    const w = 14*(1-u*.5);
+    ctx.fillStyle = "rgba(255,90,140,"+(1-u*.4).toFixed(2)+")";
+    ctx.font = (11*chin.k)+"px monospace";
+    ctx.fillText(digit(i, t), chin.x + v*w*2, chin.y + u*len);
+  }
+}
+
+function frame(){
+  const t = performance.now();
+  rotY += (tY - rotY)*.08; rotX += (tX - rotX)*.08;
+  ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.fillRect(0,0,W,H);
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+
+  if (!running || !face || video.readyState < 2){
+    if (ui.classList.contains("off")){
+      ctx.fillStyle = "#33ff66"; ctx.font = "22px monospace";
+      ctx.fillText("a carregar… " + digit(Math.floor(t/90),0) + digit(Math.floor(t/70),5) + digit(Math.floor(t/50),9), W/2, H/2);
+    }
+    return;
+  }
+
+  const ts = Math.max(t, lastTs + 1); lastTs = ts;
+  faceRes = face.detectForVideo(video, ts);
+  if (hand) handRes = hand.detectForVideo(video, ts + 0.5);
+  frames++;
+  if (t - fpsT > 1000){ fps = frames; frames = 0; fpsT = t; }
+
+  const aspect = video.videoWidth / video.videoHeight;
+  const S = Math.min(H*1.05, W/aspect*1.05);
+  const hasFace = !!(faceRes && faceRes.faceLandmarks && faceRes.faceLandmarks.length);
+
+  if (hasFace){
+    const lms = faceRes.faceLandmarks[0];
+    drawShape(lms, FACE_EDGES, 2, S, aspect, t, "rgba(51,255,102,", 10, 0);
+    const bs = (faceRes.faceBlendshapes && faceRes.faceBlendshapes[0] && faceRes.faceBlendshapes[0].categories) || [];
+    const tg = bs.find(c => c.categoryName === "tongueOut");
+    if (tg && tg.score > 0.25) drawTongue(lms, Math.min(1, tg.score*1.4), S, aspect, t);
+  } else {
+    ctx.fillStyle = "#33ff66"; ctx.font = "22px monospace";
+    ctx.fillText("à procura da tua cara… põe-te de frente e com boa luz", W/2, H/2);
+  }
+  if (handRes && handRes.landmarks && handRes.landmarks.length){
+    handRes.landmarks.forEach((h, i) => drawShape(h, HAND_EDGES, 6, S, aspect, t, "rgba(80,220,255,", 14, 5000 + i*999));
+  }
+  ctx.fillStyle = "#33ff66"; ctx.font = "13px monospace"; ctx.textAlign = "left";
+  ctx.fillText("v5 | cara: " + (hasFace ? "SIM" : "não") + " | fps: " + fps + " | " + DELEGATE, 12, H - 14);
+}
+
+function loop(){
+  requestAnimationFrame(loop);
+  try { frame(); }
+  catch(e){ if (!loop.err){ loop.err = 1; log("ERRO no desenho: " + e.message, true); } }
+}
+loop();
+</script>
+</body>
+</html>
