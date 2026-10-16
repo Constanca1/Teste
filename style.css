@@ -1,0 +1,55 @@
+:root{--ink:#111;--mute:#777}
+*{box-sizing:border-box}
+html{background:#fff}
+body{margin:0;min-height:100vh;color:var(--ink);font:700 16px "Helvetica Neue",Helvetica,Arial,sans-serif;letter-spacing:-.02em;
+background:radial-gradient(circle at 12% 18%,rgba(255,122,176,.3),transparent 42%),radial-gradient(circle at 88% 30%,rgba(79,184,255,.3),transparent 42%),radial-gradient(circle at 55% 95%,rgba(255,228,94,.35),transparent 45%),#fff;background-attachment:fixed}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #e6007e;outline-offset:3px}
+main{max-width:760px;margin:0 auto;padding:20px 14px 40px;position:relative;transition:max-width .3s}
+body.live main{max-width:1000px}
+
+/* frosted glass */
+.gear,.arrow,.btn,.mini,#panel,dialog{background:rgba(255,255,255,.38);-webkit-backdrop-filter:blur(20px) saturate(1.7);backdrop-filter:blur(20px) saturate(1.7);border:1px solid rgba(255,255,255,.85);box-shadow:inset 0 1px 1px rgba(255,255,255,.9),inset 0 -1px 2px rgba(0,0,0,.06),0 0 0 1px rgba(17,17,17,.09),0 10px 30px rgba(60,40,120,.14)}
+.gear:hover,.arrow:hover,.btn:hover,.mini:hover{background:rgba(255,255,255,.72)}
+
+.top{position:relative;display:flex;justify-content:center;align-items:center;min-height:52px}
+h1{font-size:1.6rem;margin:0;letter-spacing:-.04em}
+.gear{position:absolute;right:0;top:0;width:48px;height:48px;border-radius:16px;cursor:pointer;display:grid;place-items:center}
+.gear svg{width:22px}
+.mid{display:flex;align-items:center;gap:12px;margin-top:14px}
+.arrow{flex:none;width:44px;height:44px;border-radius:50%;font-size:1.2rem;cursor:pointer}
+
+#stage{position:relative;flex:1;aspect-ratio:4/3;border-radius:28px}
+body.live #stage{overflow:hidden;background:#000;box-shadow:0 0 0 1px rgba(17,17,17,.15),0 20px 50px rgba(60,40,120,.25)}
+#video{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;transform:scaleX(-1);display:none}
+#hands{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}
+.ball{position:absolute;transform:translate(-50%,-50%) scale(var(--s,1));transition:transform .18s,filter .18s,width .1s;filter:blur(1.5px) saturate(1.1);cursor:pointer;z-index:2;border-radius:50%}
+.ball.hit{filter:blur(1px) brightness(1.35) saturate(1.5) drop-shadow(0 0 18px var(--glow));--s:1.2}
+
+#msg{text-align:center;color:var(--mute);min-height:1.4em;margin-top:10px;font-weight:500}
+.bar{display:flex;flex-direction:column;gap:10px;max-width:420px;margin:12px auto 0}
+.btn,.mini{display:block;width:100%;border-radius:999px;padding:16px 24px;text-align:left;cursor:pointer;transition:.2s;text-decoration:none}
+.btn.rec.on{background:rgba(212,0,42,.85);color:#fff}
+#musicOut{display:flex;flex-direction:column;gap:10px}
+
+#panel{position:absolute;right:14px;top:78px;z-index:10;width:340px;max-width:calc(100% - 28px);max-height:70vh;overflow:auto;border-radius:28px;padding:22px}
+#panel[hidden]{display:none}
+#panel label{display:block;margin:6px 0 2px}
+#save{position:sticky;bottom:0;margin-top:12px;background:rgba(255,255,255,.85)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:24px;background:transparent;margin:0 0 12px}
+input[type=range]::-webkit-slider-runnable-track{height:1.5px;background:var(--ink)}
+input[type=range]::-moz-range-track{height:1.5px;background:var(--ink)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--ink);margin-top:-10px}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--ink);border:0}
+.hint{font-weight:500;color:var(--mute);font-size:.85rem;margin:0 0 14px}
+.row{display:flex;align-items:center;gap:8px;padding:8px 0}
+.row .dot{width:16px;height:16px;border-radius:50%;flex:none}
+.row b{flex:1}
+.row small{color:var(--mute);font-weight:500;font-size:.75rem}
+.mini{width:auto;padding:7px 14px;font-size:.8rem}
+
+dialog{border:none;border-radius:28px;max-width:420px;padding:28px;background:rgba(255,255,255,.65)}
+dialog::backdrop{background:rgba(255,255,255,.85)}
+dialog h2{margin-top:0}
+dialog li{margin:8px 0;font-weight:500}
+dialog .btn{margin-top:10px}
