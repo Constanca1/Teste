@@ -1,192 +1,49 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Matrix Face</title>
-<style>
-  html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:monospace;color:#33ff66}
-  canvas{position:fixed;inset:0;width:100%;height:100%}
-  #ui{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:2;text-align:center;padding:20px}
-  #ui.off{display:none}
-  button{background:transparent;color:#33ff66;border:1px solid #33ff66;padding:14px 28px;font:inherit;font-size:18px;cursor:pointer}
-  button:hover{background:#33ff66;color:#000}
-  #msg{font-size:18px;max-width:640px;min-height:20px;color:#ff5577}
-  #status{position:fixed;left:12px;bottom:10px;font-size:14px;z-index:3}
-  video{position:fixed;right:10px;top:10px;width:160px;border:1px solid #33ff66;opacity:.6;transform:scaleX(-1);z-index:3}
-</style>
+<title>Sound Balls</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<canvas id="c"></canvas>
-<video id="v" playsinline muted></video>
-<div id="ui">
-  <h1>01001101 01100101</h1>
-  <p>Vou usar a câmara para desenhar a tua cara em 0s e 1s.<br>Mexe a cabeça, levanta a mão, deita a língua de fora.</p>
-  <button id="start">Ligar câmara</button>
+<main>
+  <div class="top">
+    <h1 id="title">Drums</h1>
+    <button class="gear" id="gear" aria-label="Sound settings" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </div>
+  <div id="panel" hidden>
+    <label for="vol">Volume:</label><input type="range" id="vol" min="0" max="1" step=".05" value=".8">
+    <label for="pit">Pitch:</label><input type="range" id="pit" min="-1" max="1" step=".05" value="0">
+    <p class="hint">Record 1.5 s of sound for each ball. Without a recording, the default sound plays.</p>
+    <div id="rows"></div>
+    <button class="btn" id="save">Save changes</button>
+  </div>
+  <div class="mid">
+    <button class="arrow" id="prev" aria-label="Previous instrument">←</button>
+    <div id="stage"><video id="video" playsinline muted></video><canvas id="hands"></canvas></div>
+    <button class="arrow" id="next" aria-label="Next instrument">→</button>
+  </div>
   <div id="msg"></div>
-</div>
-<div id="status"></div>
+  <div class="bar">
+    <button class="btn" id="start">Start playing</button>
+    <button class="btn rec" id="musicRec">Record music</button>
+    <div id="musicOut"></div>
+  </div>
+</main>
 
-<script>
-const cv = document.getElementById("c"), ctx = cv.getContext("2d");
-const video = document.getElementById("v");
-const statusEl = document.getElementById("status");
-const ui = document.getElementById("ui");
-const msg = document.getElementById("msg");
-let W, H, dpr;
-function resize(){ dpr = devicePixelRatio||1; W = innerWidth; H = innerHeight;
-  cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
-addEventListener("resize", resize); resize();
+<dialog id="help">
+  <h2>How to play</h2>
+  <ol>
+    <li>Allow access to your camera.</li>
+    <li>Show both hands to the camera.</li>
+    <li>Move your fingers into a ball, as if you were playing.</li>
+    <li>The ball glows when you hit it.</li>
+  </ol>
+  <button class="btn" id="go">Let's play</button>
+  <button class="btn" id="cancel">Cancel</button>
+</dialog>
 
-let rotY = 0, rotX = 0, tY = 0, tX = 0;
-addEventListener("pointermove", e => {
-  tY = (e.clientX/W - .5) * 1.6;
-  tX = (e.clientY/H - .5) * -0.8;
-});
-
-let face = null, hand = null, lastTime = -1, faceRes = null, handRes = null;
-let FACE_EDGES = [], HAND_EDGES = [];
-let phase = "idle", loadText = "", frames = 0, fps = 0, fpsT = performance.now();
-const CDN = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
-const MODELS = "https://storage.googleapis.com/mediapipe-models/";
-const DELEGATE = location.search.includes("gpu") ? "GPU" : "CPU";
-
-function fail(text){
-  phase = "idle";
-  ui.classList.remove("off");
-  msg.textContent = text;
-  statusEl.textContent = "";
-}
-
-async function create(Cls, fs, path, opts){
-  return await Cls.createFromOptions(fs, {
-    baseOptions: { modelAssetPath: MODELS + path, delegate: DELEGATE },
-    runningMode: "VIDEO", ...opts });
-}
-
-document.getElementById("start").onclick = async () => {
-  msg.textContent = "";
-  try {
-    phase = "loading";
-    loadText = "1/3 a pedir a câmara…";
-    const stream = await navigator.mediaDevices.getUserMedia({ video:{ width:640, height:480, facingMode:"user" } });
-    video.srcObject = stream; await video.play();
-    ui.classList.add("off");
-
-    loadText = "2/3 a carregar a biblioteca de IA…";
-    const lib = await import(CDN + "/vision_bundle.mjs");
-    const { FaceLandmarker, HandLandmarker, FilesetResolver } = lib;
-    const fs = await FilesetResolver.forVisionTasks(CDN + "/wasm");
-
-    loadText = "3/3 a carregar o modelo da cara (10-20 s)…";
-    face = await create(FaceLandmarker, fs, "face_landmarker/face_landmarker/float16/1/face_landmarker.task",
-      { numFaces:1, outputFaceBlendshapes:true });
-    FACE_EDGES = FaceLandmarker.FACE_LANDMARKS_TESSELATION;
-    phase = "running";
-
-    // as mãos carregam depois, a cara já funciona entretanto
-    try {
-      hand = await create(HandLandmarker, fs, "hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task", { numHands:2 });
-      HAND_EDGES = HandLandmarker.HAND_CONNECTIONS;
-    } catch(e){ console.warn("Sem mãos:", e); }
-  } catch(err){
-    console.error(err);
-    let t = "Erro: " + (err.message || err);
-    if (err.name === "NotAllowedError") t = "A câmara foi bloqueada. Clica no cadeado junto ao endereço e permite a câmara.";
-    if (err.name === "NotFoundError") t = "Não encontrei nenhuma câmara.";
-    fail(t);
-  }
-};
-
-function project(p, S, aspect){
-  let x = (0.5 - p.x) * aspect * S;
-  let y = (p.y - 0.5) * S;
-  let z = -p.z * aspect * S * 1.5;
-  const cy = Math.cos(rotY), sy = Math.sin(rotY), cx = Math.cos(rotX), sx = Math.sin(rotX);
-  let x1 = x*cy + z*sy, z1 = -x*sy + z*cy;
-  let y1 = y*cx - z1*sx, z2 = y*sx + z1*cx;
-  const f = S*1.6, k = f/(f + z2);
-  return { x: W/2 + x1*k, y: H/2 + y1*k, d: z2/S, k };
-}
-
-function digit(i, t){ return ((i*2654435761 + Math.floor(t/400 + (i%7))) >>> 3) & 1 ? "1" : "0"; }
-
-function drawEdges(lms, edges, samples, S, aspect, t, color, size, seed){
-  const P = lms.map(p => project(p, S, aspect));
-  let n = seed;
-  for (const e of edges){
-    const a = P[e.start], b = P[e.end];
-    if (!a || !b) continue;
-    for (let s=0; s<samples; s++){
-      const u = s/samples;
-      const x = a.x+(b.x-a.x)*u, y = a.y+(b.y-a.y)*u, d = a.d+(b.d-a.d)*u, k = a.k+(b.k-a.k)*u;
-      const alpha = Math.max(.3, Math.min(1, .8 - d*1.6));
-      ctx.fillStyle = color + alpha.toFixed(2) + ")";
-      ctx.font = Math.max(7, size*k) + "px monospace";
-      ctx.fillText(digit(n++, t), x, y);
-    }
-  }
-}
-
-function drawTongue(lms, amount, S, aspect, t){
-  const chin = project(lms[17], S, aspect);
-  const len = amount * S * 0.16;
-  for (let i=0;i<70;i++){
-    const u = (i%14)/14, v = Math.floor(i/14)/5 - .5;
-    const w = 14*(1-u*.5);
-    ctx.fillStyle = "rgba(255,90,140,"+(1-u*.4).toFixed(2)+")";
-    ctx.font = (11*chin.k)+"px monospace";
-    ctx.fillText(digit(i, t), chin.x + v*w*2, chin.y + u*len);
-  }
-}
-
-function loop(){
-  requestAnimationFrame(loop);
-  const t = performance.now();
-  rotY += (tY - rotY)*.08; rotX += (tX - rotX)*.08;
-  ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.fillRect(0,0,W,H);
-  ctx.textAlign = "center"; ctx.textBaseline = "middle";
-
-  if (phase === "loading"){
-    ctx.fillStyle = "#33ff66"; ctx.font = "22px monospace";
-    ctx.fillText(loadText, W/2, H/2);
-    ctx.fillText(digit(Math.floor(t/90), 0).repeat(1) + digit(Math.floor(t/70), 5) + digit(Math.floor(t/50), 9), W/2, H/2 + 36);
-    return;
-  }
-  if (phase !== "running" || !face || video.readyState < 2) return;
-
-  if (video.currentTime !== lastTime){
-    lastTime = video.currentTime;
-    try {
-      faceRes = face.detectForVideo(video, t);
-      if (hand) handRes = hand.detectForVideo(video, t);
-    } catch(e){ console.error(e); }
-    frames++;
-  }
-  if (t - fpsT > 1000){ fps = frames; frames = 0; fpsT = t; }
-
-  const aspect = video.videoWidth / video.videoHeight;
-  const S = Math.min(H*1.05, W/aspect*1.05);
-  const hasFace = !!(faceRes && faceRes.faceLandmarks && faceRes.faceLandmarks.length);
-
-  if (hasFace){
-    const lms = faceRes.faceLandmarks[0];
-    drawEdges(lms, FACE_EDGES, 2, S, aspect, t, "rgba(51,255,102,", 10, 0);
-    const bs = faceRes.faceBlendshapes?.[0]?.categories || [];
-    const tongue = bs.find(c => c.categoryName === "tongueOut")?.score || 0;
-    if (tongue > 0.25) drawTongue(lms, Math.min(1, tongue*1.4), S, aspect, t);
-  } else {
-    ctx.fillStyle = "#33ff66"; ctx.font = "22px monospace";
-    ctx.fillText("à procura da tua cara… põe-te de frente e com boa luz", W/2, H/2);
-  }
-  if (handRes && handRes.landmarks && handRes.landmarks.length){
-    handRes.landmarks.forEach((h, i) =>
-      drawEdges(h, HAND_EDGES, 6, S, aspect, t, "rgba(80,220,255,", 14, 5000 + i*999));
-  }
-  statusEl.textContent = "cara: " + (hasFace ? "SIM" : "não") + " | mãos: " + (hand ? "ok" : "a carregar") +
-    " | fps: " + fps + " | modo: " + DELEGATE;
-}
-loop();
-</script>
+<script type="module" src="script.js"></script>
 </body>
 </html>
