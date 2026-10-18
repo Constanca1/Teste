@@ -2,15 +2,14 @@
 // [x%, y%, width%, height%, palette, name, sound param]
 const PAL=[["#ffe45e","#ff7ab0","#2a3bb5"],["#ffd2d8","#8fd0ff","#3a8fe0"],["#2bb5ff","#4a1170","#1d0a3a"],["#8fe3ff","#ff2f9a","#ffd6e8"],
 ["#ff9a3c","#ff5a7a","#4fb8ff"],["#6a2fd0","#2a1a80","#7fd4ff"],["#ffd23c","#e0188a","#12041f"],["#ffcf40","#ff3a5a","#ffb020"],
-["#3ccf91","#2a1f80","#c9f2c0"],["#00b8d9","#2a1a80","#6ae0a0"],["#ff1f9e","#8c0a6a","#7fd4ff"],["#d0e84a","#e0107e","#6a0a50"],["#ff4d6d","#b3002d","#3d0516"]];
+["#3ccf91","#2a1f80","#c9f2c0"],["#00b8d9","#2a1a80","#6ae0a0"],["#ff1f9e","#8c0a6a","#7fd4ff"],["#d0e84a","#e0107e","#6a0a50"]];
 const I={
- Drums:{balls:[[12,48,17,17,3,"Hi-hat","hat"],[26,20,19,19,7,"Crash","crash"],[42,38,15,15,0,"Tom 1","t1"],[58,38,15,15,6,"Tom 2","t2"],[66,66,17,17,8,"Floor tom","t3"],[88,50,18,18,10,"Ride","ride"],[50,82,19,19,2,"Kick","kick"],[34,66,15,15,9,"Snare","snare"]]},
- Piano:{balls:[...Array(8)].map((_,i)=>[12+i*10.8,50,11,58,[10,6,4,8,11,3,0,9][i],"Note "+"C D E F G A B C".split(" ")[i],[261.6,293.7,329.6,349.2,392,440,493.9,523.3][i]])},
- Guitar:{balls:[...Array(6)].map((_,i)=>[50,26+i*9,80,12,[1,4,7,3,0,9][i],"String "+(i+1),[82.4,110,146.8,196,246.9,329.6][i]])},
- Accordion:{balls:[[50,50,26,36,12,"Bellows","bellows"]]}
+ Drums:{balls:[[9,50,17,17,3,"Hi-hat","hat"],[22,18,19,19,7,"Crash","crash"],[40,36,15,15,0,"Tom 1","t1"],[60,36,15,15,6,"Tom 2","t2"],[74,68,17,17,8,"Floor tom","t3"],[91,48,18,18,10,"Ride","ride"],[50,84,19,19,2,"Kick","kick"],[26,68,15,15,9,"Snare","snare"]]},
+ Piano:{balls:[...Array(8)].map((_,i)=>[8+i*12,50,11,58,[10,6,4,8,11,3,0,9][i],"Note "+"C D E F G A B C".split(" ")[i],[261.6,293.7,329.6,349.2,392,440,493.9,523.3][i]])},
+ Accordion:{balls:[[50,50,26,36,0,"Bellows","bellows"]]}
 };
 const names=Object.keys(I);let cur=0;
-Object.entries(I).forEach(([k,o])=>k!=="Accordion"&&o.balls.forEach(b=>{b[2]*=.66;b[3]*=.66}));
+Object.entries(I).forEach(([k,o])=>k!=="Accordion"&&o.balls.forEach(b=>{b[2]*=.85;b[3]*=.85}));
 
 // ---------- Audio ----------
 const AC=new (window.AudioContext||window.webkitAudioContext)({latencyHint:"interactive"});
@@ -32,8 +31,7 @@ function trigger(inst,i,replay){
   flash(inst,i);
   if(custom[key]){playBuf(custom[key]);return}
   if(inst==="Drums")drum[b[6]]();
-  else if(inst==="Piano"){tone(b[6],"sine",1.4);tone(b[6]*2,"sine",.6,.2)}
-  else{tone(b[6],"sawtooth",1.2,.25);tone(b[6]*2,"triangle",.8,.2)}
+  else{tone(b[6],"sine",1.4);tone(b[6]*2,"sine",.6,.2)}
 }
 
 // Accordion: a chord that sounds while the bellows moves
@@ -145,10 +143,10 @@ function process(){
   if(inst==="Accordion"){
     let v=0,chord=0;
     if(hands.length===2){
-      const a=hands[0][9],b=hands[1][9],n=Math.min(1,Math.max(0,(Math.abs(a.x-b.x)-.2)/.6)),my=(a.y+b.y)/2;
+      const a=hands[0][9],b=hands[1][9],n=Math.min(1,Math.max(0,(Math.abs(a.x-b.x)-.15)/.5)),my=(a.y+b.y)/2;
       v=Math.min(.3,Math.abs(n-bellN)*8);bellN+=(n-bellN)*.35;
       chord=Math.min(3,Math.max(0,Math.floor((my-.25)/.12)));
-      ballEls[0].style.width=(12+bellN*40)+"%";ballEls[0].style.top=my*100+"%";
+      ballEls[0].style.width=(10+bellN*80)+"%";ballEls[0].style.top=my*100+"%";
     }
     accSet(v,chord);prevPt=pts;return;
   }
