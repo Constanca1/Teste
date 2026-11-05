@@ -1,1 +1,108 @@
-
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI certificate</title>
+<style>
+:root{--bg:#fafafa;--ink:#1a1a1a;--soft:#8c8c8c;--line:#e6e6e6;--on:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#121212;--ink:#f2f2f2;--soft:#8c8c8c;--line:#2a2a2a;--on:#121212}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;justify-content:center;line-height:1.5}
+main{width:100%;max-width:640px;padding:48px 24px}
+h1{font-size:1.9rem;font-weight:600;letter-spacing:-.02em;margin:0 0 8px}p{margin:0 0 16px}
+.mono{color:var(--soft);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase}
+input[type=text]{font:inherit;padding:14px 20px;width:100%;margin:8px 0 16px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--ink);outline:none}
+input:focus{border-color:var(--ink)}
+button{font:inherit;font-weight:500;padding:12px 28px;border:1px solid var(--ink);border-radius:999px;background:var(--ink);color:var(--on);cursor:pointer;transition:opacity .15s}
+button:hover:not(:disabled){opacity:.8}button:disabled{opacity:.25;cursor:not-allowed}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 24px}
+.opts button,button.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.opts button.sel{background:var(--ink);color:var(--on);border-color:var(--ink)}
+.stepper{display:flex;align-items:center;gap:16px;margin:8px 0 24px}.stepper button{width:44px;height:44px;padding:0;font-size:1.3rem}
+.stepper b{font-size:1.4rem;min-width:2ch;text-align:center}
+.bar{height:4px;background:var(--line);border-radius:999px;margin-bottom:28px}.bar i{display:block;height:100%;background:var(--ink);border-radius:999px;transition:width .3s}
+.row{display:flex;gap:10px;margin-top:8px}
+#think{text-align:center;padding:80px 0}#think .dots{font-size:2rem;letter-spacing:.3em;animation:b 1s infinite}@keyframes b{50%{opacity:.2}}
+#out{display:flex;flex-wrap:wrap;gap:24px;justify-content:center;margin:8px 0 28px}
+.paper{background:#fff;color:#111;border-radius:10px;padding:24px 22px;width:290px;font-family:"Courier New",monospace;font-size:.82rem;box-shadow:0 2px 18px rgba(0,0,0,.12)}
+.paper hr{border:0;border-top:1px dashed #999;margin:12px 0}
+.paper .big{font-size:3rem;font-weight:700;line-height:1;margin:6px 0}.paper .cat{font-weight:700;letter-spacing:.08em}
+.paper .r{display:flex;justify-content:space-between;gap:10px;margin:5px 0}.paper .r span:last-child{text-align:right}
+.paper small{color:#666;display:block;margin-top:8px;font-family:system-ui,sans-serif;font-size:.7rem}
+.sticker{width:420px;max-width:100%;border-radius:8px;padding:14px;color:#111;font-family:"Courier New",monospace;font-weight:700;box-shadow:0 2px 18px rgba(0,0,0,.15);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.sticker .in{border:1.5px solid #111;border-radius:2px}.srow{display:flex;border-bottom:1.5px solid #111}.srow:last-child{border-bottom:0}
+.c{padding:10px 12px;flex:1;min-width:0}.c.side{flex:0 0 36%;border-left:1.5px solid #111}
+.sticker small{display:block;font-size:.62rem;letter-spacing:.1em;font-weight:700}.sticker .t1{font-size:1.5rem;line-height:1.1;text-transform:uppercase;word-break:break-word}
+.sticker .no{font-size:1.9rem;line-height:1.1}.sticker .pct{font-size:2.8rem;line-height:1}.sticker .cc{font-size:.95rem;line-height:1.25}
+.sticker .proc{font-size:.72rem;line-height:1.5;text-transform:uppercase}.stamp{flex:0 0 96px;display:flex;align-items:center;justify-content:center;padding:6px}
+.sw{display:flex;gap:10px;justify-content:center;align-items:center;margin:0 0 24px}.sw button{width:28px;height:28px;padding:0;border-radius:50%;border:2px solid transparent}.sw button.sel{border-color:var(--ink)}
+.hide{display:none}
+@media print{body *{visibility:hidden}#out,#out *{visibility:visible}#out{position:absolute;left:0;top:0;margin:0}.paper{box-shadow:none;border:1px solid #000}}
+</style></head><body><main>
+<section id="start">
+  <p class="mono">AI certificate</p>
+  <h1>How was it made?</h1>
+  <p>Answer a few questions and get your AI certificate of how much AI was used.</p>
+  <input type="text" id="name" placeholder="Name of your project" maxlength="40">
+  <button id="go">Start</button>
+</section>
+<section id="step" class="hide">
+  <p class="mono" id="prog"></p><div class="bar"><i id="fill"></i></div>
+  <h1 id="sname"></h1><p id="q"></p>
+  <div class="opts" id="who"></div>
+  <div id="more" class="hide">
+    <p>How many prompts did you use?</p>
+    <div class="stepper"><button id="minus">−</button><b id="n">0</b><button id="plus">+</button></div>
+    <p>How much did you decide?</p>
+    <div class="opts" id="ctl"></div>
+  </div>
+  <div class="row"><button class="ghost" id="back">Back</button><button id="next" disabled>Next</button></div>
+</section>
+<section id="think" class="hide"><div class="dots">...</div><p class="mono" id="tmsg"></p></section>
+<section id="result" class="hide">
+  <div id="out"></div>
+  <div class="row" style="justify-content:center"><button id="print">Print</button><button class="ghost" id="again">Start again</button></div>
+</section>
+</main>
+<script>
+// ---- Edit these to change the questions ----
+const STEPS=[["Idea","Where did the idea come from?"],["Research","Who did the research?"],["First draft","Who made the first draft?"],["Making","Who made the work itself?"],["Final edit","Who did the final edits?"]];
+const WHO=[["Human",0],["Both",.5],["AI",1]];
+const CTL=[["I decided everything","decided"],["I chose between options","chose"],["I accepted what it gave","accepted"]];
+// Where the categories start (a choice, not a fact)
+const COL=['#e8603c','#2e7d4b','#e3b24a','#a78bdd','#3f5e9a','#f0bdd3'];
+const catCol=p=>p===0?1:p<60?2:p<100?0:4;let cur=1;
+const cat=p=>p===0?"MADE BY HUMAN":p<60?"HELPED WITH AI":p<100?"MADE BY AI":"GENERATED BY AI";
+// --------------------------------------------
+const $=id=>document.getElementById(id);let name="",i=0,ans;
+const show=id=>["start","step","think","result"].forEach(s=>$(s).classList.toggle("hide",s!==id));
+const fresh=()=>{ans=STEPS.map(()=>({who:null,n:0,ctl:null}));i=0};
+function pills(el,items,key,get){el.innerHTML="";items.forEach((it,k)=>{const b=document.createElement("button");b.textContent=it[0];
+ b.className=ans[i][key]===k?"sel":"";b.onclick=()=>{ans[i][key]=k;render()};el.appendChild(b)})}
+function render(){const a=ans[i];$("prog").textContent=`Step ${i+1} of ${STEPS.length}`;$("fill").style.width=(i/STEPS.length*100)+"%";
+ $("sname").textContent=STEPS[i][0];$("q").textContent=STEPS[i][1];pills($("who"),WHO,"who");
+ const ai=a.who!==null&&a.who>0;$("more").classList.toggle("hide",!ai);if(ai)pills($("ctl"),CTL,"ctl");
+ $("n").textContent=a.n;$("next").disabled=!(a.who===0||(ai&&a.ctl!==null));
+ $("next").textContent=i===STEPS.length-1?"Make my certificate":"Next"}
+$("go").onclick=()=>{name=$("name").value.trim();if(!name){$("name").focus();return}fresh();show("step");render()};
+$("minus").onclick=()=>{ans[i].n=Math.max(0,ans[i].n-1);render()};$("plus").onclick=()=>{ans[i].n++;render()};
+$("back").onclick=()=>{if(i===0){show("start")}else{i--;render()}};
+$("next").onclick=()=>{if(i<STEPS.length-1){i++;render()}else finish()};
+function finish(){show("think");const m=["Weighing your answers","Counting prompts","Deciding where the line goes"];let k=0;$("tmsg").textContent=m[0];
+ const t=setInterval(()=>$("tmsg").textContent=m[++k%m.length],800);setTimeout(()=>{clearInterval(t);result()},2600)}
+function result(){
+ const p=Math.round(ans.reduce((s,a)=>s+(a.who===null?0:WHO[a.who][1]),0)/STEPS.length*100);
+ cur=catCol(p);const no=String(Math.floor(Math.random()*900)+100);
+ const proc=STEPS.map((s,k)=>s[0]+': '+WHO[ans[k].who][0]).join('. ')+'.';
+ const prompts=ans.reduce((s,a)=>s+(a.who>0?a.n:0),0),date=new Date().toLocaleDateString();
+ const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+ const rows=STEPS.map((s,k)=>{const a=ans[k];const r=a.who===0?"HUMAN":`${WHO[a.who][0].toUpperCase()} · ${a.n} prompt${a.n===1?"":"s"} · ${CTL[a.ctl][1]}`;
+  return `<div class="r"><span>${s[0]}</span><span>${r}</span></div>`}).join("");
+ $("out").innerHTML=`<div class="sticker" id="sticker" style="background:${COL[cur]}"><div class="in">
+ <div class="srow"><div class="c"><div class="t1">${esc(name)}</div></div><div class="c side"><small>CERTIFICATE<br>NO.</small><div class="no">${no}</div></div></div>
+ <div class="srow"><div class="c"><small>AI CERTIFICATE · ${date}</small></div></div>
+ <div class="srow"><div class="c"><div class="pct">${p}%</div><small>AI USED IN ${STEPS.length} STEPS<br>${prompts} PROMPT${prompts===1?'':'S'}</small></div><div class="c side"><div class="cc">${cat(p)}</div></div></div>
+ <div class="srow"><div class="c"><small>PROCESS</small><div class="proc">${proc}</div></div><div class="stamp"><svg viewBox="0 0 100 100" width="84" height="84"><defs><path id="cp" d="M50,50 m-36,0 a36,36 0 1,1 72,0 a36,36 0 1,1 -72,0"/></defs><text font-size="8.5" letter-spacing="1.2" fill="#111" font-family="Courier New" font-weight="700"><textPath href="#cp">SELF-DECLARED · AI CERTIFICATE ·</textPath></text><text x="50" y="58" text-anchor="middle" font-size="24" fill="#111">✓</text></svg></div></div>
+</div></div>
+ <div class="paper"><div>RECEIPT</div><div>${esc(name)}</div><hr>${rows}<hr><div class="r"><span>Total prompts</span><span>${prompts}</span></div><div class="r"><span>AI share</span><span>${p}%</span></div><hr><small>Based on the maker's own answers. Where one category ends and the next begins is a decision, not a fact about the work.</small></div>`;
+ show("result")}
+$("print").onclick=()=>window.print();$("again").onclick=()=>{$("name").value="";show("start")};
+</script></body></html>
