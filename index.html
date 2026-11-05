@@ -114,7 +114,7 @@ function result(){
  <div class="srow"><div class="c"><div class="pct">${p}%</div><small>AI USED IN ${STEPS.length} STEPS<br>${prompts} PROMPT${prompts===1?'':'S'}</small></div><div class="c side"><div class="cc">${cat(p)}</div></div></div>
  <div class="srow"><div class="c"><small>PROCESS</small><div class="proc">${proc}</div></div><div class="stamp"><svg viewBox="0 0 100 100" width="84" height="84"><defs><path id="cp" d="M50,50 m-36,0 a36,36 0 1,1 72,0 a36,36 0 1,1 -72,0"/></defs><text font-size="8.5" letter-spacing="1.2" fill="#111" font-family="Courier New" font-weight="700"><textPath href="#cp">SELF-DECLARED · AI CERTIFICATE ·</textPath></text><text x="50" y="58" text-anchor="middle" font-size="24" fill="#111">✓</text></svg></div></div>
 </div></div>
- <div class="paper"><div>RECEIPT</div><div>${esc(name)}</div><hr>${rows}<hr><div class="r"><span>Total prompts</span><span>${prompts}</span></div><div class="r"><span>AI share</span><span>${p}%</span></div><hr><small>Based on the maker's own answers. Where one category ends and the next begins is a decision, not a fact about the work.</small></div>`;
+ <div class="paper"><div>RECEIPT</div><div>${esc(name)}</div><hr>${rows}<hr><div class="r"><span>Total prompts</span><span>${prompts}</span></div><div class="r"><span>AI share</span><span>${p}%</span></div><hr><small>Based on the maker's own answers.</small></div>`;
  show("result")}
 $("print").onclick=()=>$("sheet").classList.remove("hide");
 $("close").onclick=()=>$("sheet").classList.add("hide");
