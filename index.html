@@ -99,7 +99,9 @@ $("next").onclick=()=>{if(i<STEPS.length-1){i++;render()}else finish()};
 function finish(){show("think");const m=["Weighing your answers","Counting prompts","Deciding where the line goes"];let k=0;$("tmsg").textContent=m[0];
  const t=setInterval(()=>$("tmsg").textContent=m[++k%m.length],800);setTimeout(()=>{clearInterval(t);result()},2600)}
 function result(){
- const p=Math.round(ans.reduce((s,a)=>s+(a.who===null?0:WHO[a.who][1]),0)/STEPS.length*100);
+ const CW=[0.6,0.8,1];
+ const share=a=>a.who===0?0:Math.min(1,WHO[a.who][1]*CW[a.ctl]+Math.min(a.n,10)*0.02);
+ const p=Math.round(ans.reduce((s,a)=>s+share(a),0)/STEPS.length*100);
  cur=catCol(p);const no=String(Math.floor(Math.random()*900)+100);
  const proc=STEPS.map((s,k)=>s[0]+': '+WHO[ans[k].who][0]).join('. ')+'.';
  const prompts=ans.reduce((s,a)=>s+(a.who>0?a.n:0),0),date=new Date().toLocaleDateString();
